@@ -1,7 +1,4 @@
 #!/bin/bash
 
-# Install dependencies
-pip install -r requirements.txt
-
-# Start serveren med gunicorn
-exec gunicorn -b 0.0.0.0:$PORT webhook:app
+# Start Gunicorn direkte uden at prøve at installere pakker igen
+exec /opt/render/project/src/.venv/bin/gunicorn -b 0.0.0.0:$PORT webhook:app
