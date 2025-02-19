@@ -1,6 +1,6 @@
 from flask import Flask, request, jsonify
 import openai
-import sqlite3
+import psycopg2
 import requests
 import os
 
@@ -9,33 +9,42 @@ app = Flask(__name__)
 # Load environment variables
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 WEBHOOK_URL = "https://heimdal.onrender.com"
-DATABASE_PATH = "autosome.db"
+POSTGRES_URL = os.getenv("POSTGRESQL_URL")
 
 # Initialize OpenAI
 if not OPENAI_API_KEY:
     raise ValueError("Missing OpenAI API Key. Please set OPENAI_API_KEY environment variable.")
 openai.client = openai.OpenAI(api_key=OPENAI_API_KEY)
 
+def get_db_connection():
+    """Create a new database connection."""
+    return psycopg2.connect(POSTGRES_URL, sslmode='require')
+
 def init_db():
-    """Initialize database if not exists."""
-    conn = sqlite3.connect(DATABASE_PATH)
-    cursor = conn.cursor()
-    cursor.execute('''CREATE TABLE IF NOT EXISTS posts (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        title TEXT,
-                        occasion TEXT,
-                        audience TEXT,
-                        generated_text TEXT,
-                        generated_media TEXT,
-                        suggested_hashtags TEXT,
-                        recommended_platforms TEXT,
-                        best_posting_time TEXT,
-                        strategy_suggestions TEXT,
-                        edited_text TEXT,
-                        selected_media TEXT,
-                        status TEXT)''')
-    conn.commit()
-    conn.close()
+    """Initialize PostgreSQL database and ensure 'posts' table exists."""
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute('''CREATE TABLE IF NOT EXISTS posts (
+                            id SERIAL PRIMARY KEY,
+                            title TEXT,
+                            occasion TEXT,
+                            audience TEXT,
+                            generated_text TEXT,
+                            generated_media TEXT,
+                            suggested_hashtags TEXT,
+                            recommended_platforms TEXT,
+                            best_posting_time TEXT,
+                            strategy_suggestions TEXT,
+                            edited_text TEXT,
+                            selected_media TEXT,
+                            status TEXT)''')
+        conn.commit()
+        cursor.close()
+        conn.close()
+        print("Database initialized successfully.")
+    except Exception as e:
+        print("Error initializing database:", str(e))
 
 @app.route('/')
 def home():
@@ -66,14 +75,15 @@ def generate_post():
         generated_text = response.choices[0].message.content
         print("Generated text:", generated_text)  # Debugging
 
-        # Store post in database
-        conn = sqlite3.connect(DATABASE_PATH)
+        # Store post in PostgreSQL database
+        conn = get_db_connection()
         cursor = conn.cursor()
         cursor.execute('''INSERT INTO posts (title, occasion, audience, generated_text, status)
-                          VALUES (?, ?, ?, ?, ?)''', 
+                          VALUES (%s, %s, %s, %s, %s) RETURNING id''', 
                           (data['post_title'], data['post_occasion'], data['target_audience'], generated_text, 'Draft'))
+        post_id = cursor.fetchone()[0]
         conn.commit()
-        post_id = cursor.lastrowid
+        cursor.close()
         conn.close()
         
         return jsonify({"post_id": post_id, "generated_text": generated_text})
@@ -82,37 +92,15 @@ def generate_post():
         print("Error in generate_post:", str(e))  # Debugging
         return jsonify({"error": str(e)}), 500
 
-@app.route('/api/update_post', methods=['POST'])
-def update_post():
-    """Update an existing post with edited text and selected media."""
-    data = request.json
-    conn = sqlite3.connect(DATABASE_PATH)
-    cursor = conn.cursor()
-    cursor.execute('''UPDATE posts SET edited_text = ?, selected_media = ?, status = ? WHERE id = ?''',
-                   (data['edited_text'], data['selected_media'], data['status'], data['post_id']))
-    conn.commit()
-    conn.close()
-    return jsonify({"message": "Post updated successfully"})
-
-@app.route('/api/post_to_platform', methods=['POST'])
-def post_to_platform():
-    """Send post data to webhook for publishing."""
-    data = request.json
-    try:
-        response = requests.post(WEBHOOK_URL, json=data)
-        response.raise_for_status()
-    except requests.exceptions.RequestException as e:
-        return jsonify({"error": str(e)}), 500
-    return jsonify({"message": "Post sent to webhook", "response": response.text})
-
 @app.route('/api/get_post_metrics', methods=['GET'])
 def get_post_metrics():
     """Retrieve post performance data."""
     post_id = request.args.get('post_id')
-    conn = sqlite3.connect(DATABASE_PATH)
+    conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute('''SELECT * FROM posts WHERE id = ?''', (post_id,))
+    cursor.execute('''SELECT * FROM posts WHERE id = %s''', (post_id,))
     post = cursor.fetchone()
+    cursor.close()
     conn.close()
     if post:
         return jsonify({"post": post})
