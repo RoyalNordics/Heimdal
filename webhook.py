@@ -7,7 +7,7 @@ app = Flask(__name__)
 
 # Hent GPT API-nøglen fra miljøvariabler
 api_key = os.getenv('GPT_API_KEY')
-gpt_url = "https://api.openai.com/v1/chat/completions"  # URL til GPT-4 chat endpoint
+gpt_url = "https://api.openai.com/v1/chat/completions"  # Ret URL til GPT-4 chat endpoint
 
 # Debugging: Log API-nøglen for at sikre, at den er korrekt indlæst
 print(f"Using GPT API key: {api_key}")
