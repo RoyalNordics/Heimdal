@@ -6,8 +6,8 @@ import threading
 # Initialiser Flask-applikationen
 app = Flask(__name__)
 
-# Hent GPT API-nøglen fra miljøvariabler
-api_key = os.getenv('GPT_API_KEY')
+# Midlertidig hårdkodning af GPT API-nøglen (for fejlfinding)
+api_key = "sk-xxxxxxx..."  # Erstat med din faktiske API-nøgle
 gpt_url = "https://api.openai.com/v1/completions"  # URL til GPT API
 
 def query_gpt(prompt):
@@ -65,7 +65,7 @@ def webhook():
 
 if __name__ == "__main__":
     try:
-        print("Starting Flask app...")  # Log for at bekræfte at Flask starter
+        print("Starting Flask app...")
         port = int(os.environ.get("PORT", 10000))
         print(f"Flask running on port {port}")  # Log for at sikre, at porten er korrekt
         app.run(host="0.0.0.0", port=port)
