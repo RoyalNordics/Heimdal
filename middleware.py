@@ -9,6 +9,9 @@ app = Flask(__name__)
 
 # Databaseforbindelse
 DATABASE_URL = os.getenv("DATABASE_URL")
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+
+client = openai.OpenAI(api_key=OPENAI_API_KEY)
 
 def save_to_db(event_type, payload):
     """Gemmer webhook-events i databasen"""
@@ -44,20 +47,21 @@ def debug_env():
     """Tjekker om miljøvariabler er korrekt indlæst"""
     return jsonify({
         "DATABASE_URL": "Set" if DATABASE_URL else "Not Found",
-        "OPENAI_API_KEY": "Set" if os.getenv("OPENAI_API_KEY") else "Not Found"
+        "OPENAI_API_KEY": "Set" if OPENAI_API_KEY else "Not Found"
     })
 
 @app.route("/test_openai", methods=["GET"])
 def test_openai():
     """Tester om OpenAI API fungerer"""
     try:
-        response = openai.ChatCompletion.create(
+        response = client.chat.completions.create(
             model="gpt-4",
-            messages=[{"role": "system", "content": "Say 'Hello, Heimdal!'" }]
+            messages=[{"role": "system", "content": "Say 'Hello, Heimdal!'"}]
         )
-        return jsonify({"response": response["choices"][0]["message"]["content"]})
+        return jsonify({"response": response.choices[0].message.content})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
+
