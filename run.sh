@@ -1,4 +1,8 @@
 #!/bin/bash
 
-# Start Gunicorn direkte uden at prøve at installere pakker igen
-exec /opt/render/project/src/.venv/bin/gunicorn -b 0.0.0.0:$PORT webhook:app
+# Installer afhængigheder
+pip install --upgrade pip
+pip install -r requirements.txt
+
+# Start Flask-serveren med Gunicorn
+exec gunicorn -b 0.0.0.0:$PORT middleware:app
