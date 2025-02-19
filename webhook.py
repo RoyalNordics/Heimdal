@@ -5,12 +5,12 @@ import threading
 
 app = Flask(__name__)
 
-# Hent GPT API-nøglen fra miljøvariabler
-api_key = os.getenv('GPT_API_KEY')
+# Hent OPENAI API-nøglen fra miljøvariabler
+api_key = os.getenv('OPENAI_API_KEY')  # Sørg for at bruge 'OPENAI_API_KEY' i stedet for 'GPT_API_KEY'
 gpt_url = "https://api.openai.com/v1/chat/completions"  # Ret URL til GPT-4 chat endpoint
 
 # Debugging: Log API-nøglen for at sikre, at den er korrekt indlæst
-print(f"Using GPT API key: {api_key}")
+print(f"Using OpenAI API key: {api_key}")
 
 def query_gpt(prompt):
     headers = {
