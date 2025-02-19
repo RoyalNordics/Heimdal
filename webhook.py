@@ -14,7 +14,7 @@ DATABASE_PATH = "autosome.db"
 # Initialize OpenAI
 if not OPENAI_API_KEY:
     raise ValueError("Missing OpenAI API Key. Please set OPENAI_API_KEY environment variable.")
-openai.api_key = OPENAI_API_KEY
+openai.client = openai.OpenAI(api_key=OPENAI_API_KEY)
 
 def init_db():
     """Initialize database if not exists."""
@@ -59,11 +59,11 @@ def generate_post():
         """
         print("Generated prompt:", prompt)  # Debugging
 
-        response = openai.ChatCompletion.create(
+        response = openai.client.chat.completions.create(
             model="gpt-4",
             messages=[{"role": "user", "content": prompt}]
         )
-        generated_text = response["choices"][0]["message"]["content"]
+        generated_text = response.choices[0].message.content
         print("Generated text:", generated_text)  # Debugging
 
         # Store post in database
