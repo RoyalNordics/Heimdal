@@ -1,5 +1,6 @@
-Flask==2.1.0
+Flask==2.1.2  # Flask 2.1.x er kompatibel med den aktuelle version af Werkzeug
 gunicorn==23.0.0
+werkzeug==2.1.2  # Brug en kompatibel version af Werkzeug
 psycopg2-binary==2.9.10
 openai==1.63.2
 requests==2.32.3
