@@ -5,8 +5,8 @@ import threading
 
 app = Flask(__name__)
 
-# Hent GPT API-nøglen fra miljøvariabler
-api_key = os.getenv('GPT_API_KEY')
+# Hent OPENAI_API_KEY fra miljøvariabler
+api_key = os.getenv('OPENAI_API_KEY')
 gpt_url = "https://api.openai.com/v1/completions"  # URL til GPT API (kan ændre sig afhængigt af din GPT-udbyder)
 
 # Debugging: Log API-nøglen for at sikre, at den er korrekt indlæst
@@ -19,13 +19,13 @@ def query_gpt(prompt):
     }
 
     data = {
-        'model': 'gpt-4',  # Eller den ønskede model
+        'model': 'gpt-4',  # Ændre dette til den ønskede model, som f.eks. gpt-4
         'prompt': prompt,
         'max_tokens': 100,
     }
 
-    # Debugging: Se hvordan API-nøglen ser ud, før vi sender det
-    print(f"Using GPT API key: {api_key}")  # Debugging for API key
+    # Debugging: Se hvordan data ser ud, før vi sender det
+    print(f"Sending data to GPT: {data}")
 
     try:
         response = requests.post(gpt_url, json=data, headers=headers)
