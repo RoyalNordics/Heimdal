@@ -9,7 +9,10 @@ app = Flask(__name__)
 # Load environment variables
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 WEBHOOK_URL = "https://heimdal.onrender.com"
-POSTGRES_URL = os.getenv("POSTGRESQL_URL")
+POSTGRES_URL = os.getenv("DATABASE_URL")  # Changed to match Render environment variable
+
+if not POSTGRES_URL:
+    raise ValueError("Missing DATABASE_URL. Please set it in your environment variables.")
 
 # Initialize OpenAI
 if not OPENAI_API_KEY:
@@ -18,7 +21,13 @@ openai.client = openai.OpenAI(api_key=OPENAI_API_KEY)
 
 def get_db_connection():
     """Create a new database connection."""
-    return psycopg2.connect(POSTGRES_URL, sslmode='require')
+    try:
+        conn = psycopg2.connect(POSTGRES_URL, sslmode='require')
+        print("✅ Successfully connected to PostgreSQL!")
+        return conn
+    except Exception as e:
+        print("❌ Error connecting to PostgreSQL:", str(e))
+        raise
 
 def init_db():
     """Initialize PostgreSQL database and ensure 'posts' table exists."""
@@ -42,9 +51,9 @@ def init_db():
         conn.commit()
         cursor.close()
         conn.close()
-        print("Database initialized successfully.")
+        print("✅ Database initialized successfully.")
     except Exception as e:
-        print("Error initializing database:", str(e))
+        print("❌ Error initializing database:", str(e))
 
 @app.route('/')
 def home():
@@ -89,7 +98,7 @@ def generate_post():
         return jsonify({"post_id": post_id, "generated_text": generated_text})
     
     except Exception as e:
-        print("Error in generate_post:", str(e))  # Debugging
+        print("❌ Error in generate_post:", str(e))  # Debugging
         return jsonify({"error": str(e)}), 500
 
 @app.route('/api/get_post_metrics', methods=['GET'])
@@ -107,10 +116,11 @@ def get_post_metrics():
     return jsonify({"message": "Post not found"}), 404
 
 if __name__ == '__main__':
+    print("🔄 Starting up...")
     init_db()
     port = int(os.environ.get("PORT", 5000))  # Use Render's dynamic port
-    print("Starting Flask on port", port)
-    print("Registered routes:")
+    print("🚀 Starting Flask on port", port)
+    print("🔗 Registered routes:")
     for rule in app.url_map.iter_rules():
         print(rule)
     app.run(debug=True, host='0.0.0.0', port=port)
