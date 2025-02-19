@@ -44,33 +44,43 @@ def home():
 @app.route('/api/generate_post', methods=['POST'])
 def generate_post():
     """Generate a post using GPT-4."""
-    data = request.json
-    prompt = f"""
-    Generate a social media post based on:
-    - Title: {data['post_title']}
-    - Occasion: {data['post_occasion']}
-    - Audience: {data['target_audience']}
-    """
     try:
+        data = request.json
+        print("Received data:", data)  # Debugging
+        
+        if not data or 'post_title' not in data or 'post_occasion' not in data or 'target_audience' not in data:
+            raise ValueError("Missing required fields in request data")
+
+        prompt = f"""
+        Generate a social media post based on:
+        - Title: {data['post_title']}
+        - Occasion: {data['post_occasion']}
+        - Audience: {data['target_audience']}
+        """
+        print("Generated prompt:", prompt)  # Debugging
+
         response = openai.ChatCompletion.create(
             model="gpt-4",
             messages=[{"role": "user", "content": prompt}]
         )
         generated_text = response["choices"][0]["message"]["content"]
-    except openai.error.OpenAIError as e:
+        print("Generated text:", generated_text)  # Debugging
+
+        # Store post in database
+        conn = sqlite3.connect(DATABASE_PATH)
+        cursor = conn.cursor()
+        cursor.execute('''INSERT INTO posts (title, occasion, audience, generated_text, status)
+                          VALUES (?, ?, ?, ?, ?)''', 
+                          (data['post_title'], data['post_occasion'], data['target_audience'], generated_text, 'Draft'))
+        conn.commit()
+        post_id = cursor.lastrowid
+        conn.close()
+        
+        return jsonify({"post_id": post_id, "generated_text": generated_text})
+    
+    except Exception as e:
+        print("Error in generate_post:", str(e))  # Debugging
         return jsonify({"error": str(e)}), 500
-    
-    # Store post in database
-    conn = sqlite3.connect(DATABASE_PATH)
-    cursor = conn.cursor()
-    cursor.execute('''INSERT INTO posts (title, occasion, audience, generated_text, status)
-                      VALUES (?, ?, ?, ?, ?)''', 
-                      (data['post_title'], data['post_occasion'], data['target_audience'], generated_text, 'Draft'))
-    conn.commit()
-    post_id = cursor.lastrowid
-    conn.close()
-    
-    return jsonify({"post_id": post_id, "generated_text": generated_text})
 
 @app.route('/api/update_post', methods=['POST'])
 def update_post():
