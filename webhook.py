@@ -5,12 +5,12 @@ import threading
 
 app = Flask(__name__)
 
-# Hent OPENAI_API_KEY fra miljøvariabler
+# Hent GPT API-nøglen fra miljøvariabler
 api_key = os.getenv('OPENAI_API_KEY')
-gpt_url = "https://api.openai.com/v1/completions"  # URL til GPT API (kan ændre sig afhængigt af din GPT-udbyder)
+gpt_url = "https://api.openai.com/v1/chat/completions"  # Korrekt URL for GPT-4
 
 # Debugging: Log API-nøglen for at sikre, at den er korrekt indlæst
-print(f"Using GPT API key: {api_key}")
+print(f"Using GPT API key: {api_key}")  # For debugging, printer nøglen
 
 def query_gpt(prompt):
     headers = {
@@ -19,8 +19,8 @@ def query_gpt(prompt):
     }
 
     data = {
-        'model': 'gpt-4',  # Ændre dette til den ønskede model, som f.eks. gpt-4
-        'prompt': prompt,
+        'model': 'gpt-4',  # Brug GPT-4 modellen
+        'messages': [{'role': 'user', 'content': prompt}],  # Opret en beskedstruktur for chat
         'max_tokens': 100,
     }
 
