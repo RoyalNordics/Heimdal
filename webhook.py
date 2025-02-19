@@ -1,42 +1,44 @@
 import os
 import requests
 from flask import Flask, request, jsonify
+import threading
 
+# Initialiser Flask-applikationen
 app = Flask(__name__)
 
 # Hent GPT API-nøglen fra miljøvariabler
 api_key = os.getenv('GPT_API_KEY')
-gpt_url = "https://api.openai.com/v1/completions"  # URL til GPT API (kan ændre sig afhængigt af din GPT-udbyder)
+gpt_url = "https://api.openai.com/v1/completions"  # URL til GPT API
 
-# Debugging: Log API-nøglen for at sikre, at den er korrekt indlæst
-print(f"Using GPT API key: {api_key}")
-
-# GPT API-kaldet
 def query_gpt(prompt):
     headers = {
-        'Authorization': f'Bearer {api_key}',  # Brug GPT API-nøglen
+        'Authorization': f'Bearer {api_key}',
         'Content-Type': 'application/json',
     }
 
     data = {
-        'model': 'text-davinci-003',  # Eller den model, du vil bruge
-        'prompt': prompt,  # Prompten, som du sender til GPT
-        'max_tokens': 100,  # Maksimalt antal tokens (ord) i svaret
+        'model': 'text-davinci-003',  # Eller en hvilken som helst model, du bruger
+        'prompt': prompt,
+        'max_tokens': 100,
     }
 
-    # Debugging: Se hvordan data ser ud, før vi sender det
+    # Debugging: Log hvad der bliver sendt til OpenAI
     print(f"Sending data to GPT: {data}")
 
     try:
-        response = requests.post(gpt_url, json=data, headers=headers)  # Send POST request til GPT
-        print(f"GPT Response: {response.text}")  # Log GPT svar
-        response.raise_for_status()  # Hvis der er en HTTP-fejl, vil dette generere en undtagelse
+        response = requests.post(gpt_url, json=data, headers=headers)
+        
+        # Log status og svar fra GPT
+        print(f"GPT Response Status Code: {response.status_code}")
+        print(f"GPT Response Text: {response.text}")
+        
+        # Hvis der er en HTTP-fejl, vil dette generere en undtagelse
+        response.raise_for_status()
     except requests.exceptions.RequestException as e:
-        # Hvis der er en fejl med API-kaldet
         print(f"Error with GPT API call: {e}")
         return {"error": str(e)}
 
-    return response.json()  # Returner JSON-svaret fra GPT
+    return response.json()  # Return GPT response
 
 @app.route("/")
 def home():
@@ -58,16 +60,14 @@ def webhook():
         return jsonify({"status": "received", "gpt_response": gpt_response}), 200
 
     except Exception as e:
-        # Debugging: Log fejl
-        print(f"Error processing webhook: {str(e)}")
+        print(f"Error processing webhook: {str(e)}")  # Log fejl
         return jsonify({"status": "error", "message": str(e)}), 400
 
 if __name__ == "__main__":
     try:
         print("Starting Flask app...")  # Log for at bekræfte at Flask starter
-        port = int(os.environ.get("PORT", 10000))  # Brug porten fra Render miljøvariabel
+        port = int(os.environ.get("PORT", 10000))
         print(f"Flask running on port {port}")  # Log for at sikre, at porten er korrekt
         app.run(host="0.0.0.0", port=port)
     except Exception as e:
         print(f"Error starting Flask server: {str(e)}")  # Log eventuelle fejl under opstart
-

@@ -1,0 +1,21 @@
+{
+    "image": "mcr.microsoft.com/devcontainers/python:3.10",
+    "features": {
+      "docker-in-docker": "latest",
+      "node": "latest",
+      "git": "latest"
+    },
+    "postCreateCommand": "pip install -r requirements.txt && npm install && playwright install",
+    "customizations": {
+      "vscode": {
+        "settings": {
+          "editor.formatOnSave": true
+        },
+        "extensions": [
+          "ms-python.python",
+          "esbenp.prettier-vscode",
+          "GitHub.copilot"
+        ]
+      }
+    }
+  }

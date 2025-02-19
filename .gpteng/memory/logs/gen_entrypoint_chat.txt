@@ -1,0 +1,199 @@
+
+2025-02-18T14:42:03.161946
+================================ System Message ================================
+
+You will get information about a codebase that is currently on disk in the current folder.
+The user will ask you to write a script that runs the code in a specific way.
+You will answer with code blocks that include all the necessary terminal commands.
+Do not install globally. Do not use sudo.
+Do not explain the code, just give the commands.
+Do not use placeholders, use example values (like . for a folder argument) if necessary.
+
+
+================================ Human Message =================================
+
+
+        Make a unix script that
+        a) installs dependencies
+        b) runs all necessary parts of the codebase (in parallel if necessary)
+        
+Information about the codebase:
+
+```
+File: requirements.txt
+1 dataclasses
+2 pytest
+
+File: src/main.py
+1 from scheduler import Scheduler
+2 from social_media_manager import SocialMediaManager
+3 from facebook_platform import FacebookPlatform
+4 from twitter_platform import TwitterPlatform
+5 from instagram_platform import InstagramPlatform
+6 
+7 def main():
+8     # Create instances of social media platforms
+9     facebook = FacebookPlatform()
+10     twitter = TwitterPlatform()
+11     instagram = InstagramPlatform()
+12 
+13     # Create a social media manager
+14     manager = SocialMediaManager()
+15 
+16     # Add platforms to the manager
+17     manager.add_platform(facebook)
+18     manager.add_platform(twitter)
+19     manager.add_platform(instagram)
+20 
+21     # Schedule a post
+22     manager.schedule_post("Hello World!", "2023-10-10 10:00:00", "Facebook")
+23     manager.schedule_post("Good Morning!", "2023-10-10 11:00:00", "Twitter")
+24     manager.schedule_post("Check this out!", "2023-10-10 12:00:00", "Instagram")
+25 
+26     # Run the scheduler to post scheduled posts
+27     manager.run_scheduler()
+28 
+29 if __name__ == "__main__":
+30     main()
+
+File: src/post.py
+1 from dataclasses import dataclass
+2 from datetime import datetime
+3 
+4 @dataclass
+5 class Post:
+6     content: str
+7     post_time: datetime
+8     platform: str
+
+File: src/scheduler.py
+1 from datetime import datetime
+2 from typing import List
+3 from post import Post
+4 
+5 class Scheduler:
+6     def __init__(self):
+7         self.queue: List[Post] = []
+8 
+9     def add_post(self, post: Post):
+10         self.queue.append(post)
+11         self.queue.sort(key=lambda x: x.post_time)
+12 
+13     def get_ready_posts(self) -> List[Post]:
+14         now = datetime.now()
+15         ready_posts = [post for post in self.queue if post.post_time <= now]
+16         self.queue = [post for post in self.queue if post.post_time > now]
+17         return ready_posts
+
+File: src/social_media_platform.py
+1 from abc import ABC, abstractmethod
+2 from post import Post
+3 
+4 class SocialMediaPlatform(ABC):
+5     @abstractmethod
+6     def post(self, post: Post):
+7         pass
+
+File: src/facebook_platform.py
+1 from social_media_platform import SocialMediaPlatform
+2 from post import Post
+3 
+4 class FacebookPlatform(SocialMediaPlatform):
+5     def post(self, post: Post):
+6         print(f"Posting to Facebook: {post.content}")
+
+File: src/twitter_platform.py
+1 from social_media_platform import SocialMediaPlatform
+2 from post import Post
+3 
+4 class TwitterPlatform(SocialMediaPlatform):
+5     def post(self, post: Post):
+6         print(f"Posting to Twitter: {post.content}")
+
+File: src/instagram_platform.py
+1 from social_media_platform import SocialMediaPlatform
+2 from post import Post
+3 
+4 class InstagramPlatform(SocialMediaPlatform):
+5     def post(self, post: Post):
+6         print(f"Posting to Instagram: {post.content}")
+
+File: src/social_media_manager.py
+1 from datetime import datetime
+2 from typing import List
+3 from post import Post
+4 from scheduler import Scheduler
+5 from social_media_platform import SocialMediaPlatform
+6 
+7 class SocialMediaManager:
+8     def __init__(self):
+9         self.scheduler = Scheduler()
+10         self.platforms: List[SocialMediaPlatform] = []
+11 
+12     def add_platform(self, platform: SocialMediaPlatform):
+13         self.platforms.append(platform)
+14 
+15     def schedule_post(self, content: str, post_time_str: str, platform_name: str):
+16         post_time = datetime.strptime(post_time_str, "%Y-%m-%d %H:%M:%S")
+17         post = Post(content, post_time, platform_name)
+18         self.scheduler.add_post(post)
+19 
+20     def run_scheduler(self):
+21         ready_posts = self.scheduler.get_ready_posts()
+22         for post in ready_posts:
+23             for platform in self.platforms:
+24                 if platform.__class__.__name__.startswith(post.platform):
+25                     platform.post(post)
+
+File: tests/test_social_media_manager.py
+1 import pytest
+2 from datetime import datetime, timedelta
+3 from social_media_manager import SocialMediaManager
+4 from facebook_platform import FacebookPlatform
+5 from twitter_platform import TwitterPlatform
+6 from instagram_platform import InstagramPlatform
+7 
+8 def test_schedule_and_post():
+9     # Create instances of social media platforms
+10     facebook = FacebookPlatform()
+11     twitter = TwitterPlatform()
+12     instagram = InstagramPlatform()
+13 
+14     # Create a social media manager
+15     manager = SocialMediaManager()
+16 
+17     # Add platforms to the manager
+18     manager.add_platform(facebook)
+19     manager.add_platform(twitter)
+20     manager.add_platform(instagram)
+21 
+22     # Schedule a post
+23     future_time = (datetime.now() + timedelta(seconds=1)).strftime("%Y-%m-%d %H:%M:%S")
+24     manager.schedule_post("Test Post", future_time, "Facebook")
+25 
+26     # Wait for the post time
+27     import time
+28     time.sleep(2)
+29 
+30     # Run the scheduler to post scheduled posts
+31     manager.run_scheduler()
+32 
+33     # Since we are using print statements, we can't directly assert the output
+34     # In a real-world scenario, we would mock the platform's post method and assert calls
+
+```
+
+================================== Ai Message ==================================
+
+```bash
+#!/bin/bash
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Run the main application
+python src/main.py &
+
+# Run tests
+pytest tests/test_social_media_manager.py &
+```
