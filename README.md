@@ -1,2 +1,1 @@
-# Heimdal
-AutoSoMe
+# Heimdal - AutoSoMe Automation
